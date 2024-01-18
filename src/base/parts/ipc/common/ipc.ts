@@ -1,12 +1,11 @@
 import { VSBuffer } from 'base/common/buffer';
 import { CancellationToken, CancellationTokenSource } from 'base/common/cancellation';
-import { Emitter, Event, EventMultiplexer, Relay } from 'base/common/event';
-import { combinedDisposable, DisposableStore, dispose, IDisposable, toDisposable } from 'base/common/lifecycle';
+import { Emitter, Event, Relay } from 'base/common/event';
+import { combinedDisposable, dispose, IDisposable, toDisposable } from 'base/common/lifecycle';
 import * as errors from 'base/common/errors';
 import { CancelablePromise, createCancelablePromise, timeout } from 'base/common/async';
 import { memoize } from 'base/common/decorators';
-import { isFunction, isUndefinedOrNull } from 'base/common/types';
-import { getRandomElement } from 'base/common/arrays';
+import { isUndefinedOrNull } from 'base/common/types';
 import * as strings from 'base/common/strings';
 import { revive } from 'base/common/marshalling';
 
@@ -770,162 +769,6 @@ export function getDelayedChannel<T extends IChannel>(promise: Promise<T>): T {
       return relay.event;
     },
   } as T;
-}
-
-export class IPCServer<TContext = string> implements IChannelServer<TContext>, IRoutingChannelClient<TContext>, IConnectionHub<TContext>, IDisposable {
-  private channels = new Map<string, IServerChannel<TContext>>();
-  private _connections = new Set<Connection<TContext>>();
-
-  private readonly _onDidAddConnection = new Emitter<Connection<TContext>>();
-  readonly onDidAddConnection: Event<Connection<TContext>> = this._onDidAddConnection.event;
-
-  private readonly _onDidRemoveConnection = new Emitter<Connection<TContext>>();
-  readonly onDidRemoveConnection: Event<Connection<TContext>> = this._onDidRemoveConnection.event;
-
-  get connections(): Connection<TContext>[] {
-    const result: Connection<TContext>[] = [];
-    this._connections.forEach((ctx) => result.push(ctx));
-    return result;
-  }
-
-  constructor(onDidClientConnect: Event<ClientConnectionEvent>) {
-    onDidClientConnect(({ protocol, onDidClientDisconnect }) => {
-      const onFirstMessage = Event.once(protocol.onMessage);
-
-      onFirstMessage((msg) => {
-        const reader = new BufferReader(msg);
-        const ctx = deserialize(reader) as TContext;
-
-        const channelServer = new ChannelServer(protocol, ctx);
-        const channelClient = new ChannelClient(protocol);
-
-        this.channels.forEach((channel, name) => channelServer.registerChannel(name, channel));
-
-        const connection: Connection<TContext> = { channelServer, channelClient, ctx };
-        this._connections.add(connection);
-        this._onDidAddConnection.fire(connection);
-
-        onDidClientDisconnect(() => {
-          channelServer.dispose();
-          channelClient.dispose();
-          this._connections.delete(connection);
-          this._onDidRemoveConnection.fire(connection);
-        });
-      });
-    });
-  }
-
-  /**
-   * Get a channel from a remote client. When passed a router,
-   * one can specify which client it wants to call and listen to/from.
-   * Otherwise, when calling without a router, a random client will
-   * be selected and when listening without a router, every client
-   * will be listened to.
-   */
-  getChannel<T extends IChannel>(channelName: string, router: IClientRouter<TContext>): T;
-  getChannel<T extends IChannel>(channelName: string, clientFilter: (client: Client<TContext>) => boolean): T;
-  getChannel<T extends IChannel>(channelName: string, routerOrClientFilter: IClientRouter<TContext> | ((client: Client<TContext>) => boolean)): T {
-    const that = this;
-
-    return {
-      call(command: string, arg?: any, cancellationToken?: CancellationToken): Promise<T> {
-        let connectionPromise: Promise<Client<TContext>>;
-
-        if (isFunction(routerOrClientFilter)) {
-          // when no router is provided, we go random client picking
-          let connection = getRandomElement(that.connections.filter(routerOrClientFilter));
-
-          connectionPromise = connection
-            ? // if we found a client, let's call on it
-              Promise.resolve(connection)
-            : // else, let's wait for a client to come along
-              Event.toPromise(Event.filter(that.onDidAddConnection, routerOrClientFilter));
-        } else {
-          connectionPromise = routerOrClientFilter.routeCall(that, command, arg);
-        }
-
-        const channelPromise = connectionPromise.then((connection) => (connection as Connection<TContext>).channelClient.getChannel(channelName));
-
-        return getDelayedChannel(channelPromise).call(command, arg, cancellationToken);
-      },
-      listen(event: string, arg: any): Event<T> {
-        if (isFunction(routerOrClientFilter)) {
-          return that.getMulticastEvent(channelName, routerOrClientFilter, event, arg);
-        }
-
-        const channelPromise = routerOrClientFilter.routeEvent(that, event, arg).then((connection) => (connection as Connection<TContext>).channelClient.getChannel(channelName));
-
-        return getDelayedChannel(channelPromise).listen(event, arg);
-      },
-    } as T;
-  }
-
-  private getMulticastEvent<T extends IChannel>(channelName: string, clientFilter: (client: Client<TContext>) => boolean, eventName: string, arg: any): Event<T> {
-    const that = this;
-    let disposables = new DisposableStore();
-
-    // Create an emitter which hooks up to all clients
-    // as soon as first listener is added. It also
-    // disconnects from all clients as soon as the last listener
-    // is removed.
-    const emitter = new Emitter<T>({
-      onWillAddFirstListener: () => {
-        disposables = new DisposableStore();
-
-        // The event multiplexer is useful since the active
-        // client list is dynamic. We need to hook up and disconnection
-        // to/from clients as they come and go.
-        const eventMultiplexer = new EventMultiplexer<T>();
-        const map = new Map<Connection<TContext>, IDisposable>();
-
-        const onDidAddConnection = (connection: Connection<TContext>) => {
-          const channel = connection.channelClient.getChannel(channelName);
-          const event = channel.listen<T>(eventName, arg);
-          const disposable = eventMultiplexer.add(event);
-
-          map.set(connection, disposable);
-        };
-
-        const onDidRemoveConnection = (connection: Connection<TContext>) => {
-          const disposable = map.get(connection);
-
-          if (!disposable) {
-            return;
-          }
-
-          disposable.dispose();
-          map.delete(connection);
-        };
-
-        that.connections.filter(clientFilter).forEach(onDidAddConnection);
-        Event.filter(that.onDidAddConnection, clientFilter)(onDidAddConnection, undefined, disposables);
-        that.onDidRemoveConnection(onDidRemoveConnection, undefined, disposables);
-        eventMultiplexer.event(emitter.fire, emitter, disposables);
-
-        disposables.add(eventMultiplexer);
-      },
-      onDidRemoveLastListener: () => {
-        disposables.dispose();
-      },
-    });
-
-    return emitter.event;
-  }
-
-  registerChannel(channelName: string, channel: IServerChannel<TContext>): void {
-    this.channels.set(channelName, channel);
-
-    this._connections.forEach((connection) => {
-      connection.channelServer.registerChannel(channelName, channel);
-    });
-  }
-
-  dispose(): void {
-    this.channels.clear();
-    this._connections.clear();
-    this._onDidAddConnection.dispose();
-    this._onDidRemoveConnection.dispose();
-  }
 }
 
 /**

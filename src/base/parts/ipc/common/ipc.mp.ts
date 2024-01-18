@@ -1,7 +1,7 @@
-import { VSBuffer } from "base/common/buffer";
-import { Event } from "base/common/event";
-import { IDisposable } from "base/common/lifecycle";
-import { IChannel, IMessagePassingProtocol, IPCClient } from "base/parts/ipc/common/ipc";
+import { VSBuffer } from 'base/common/buffer';
+import { Event } from 'base/common/event';
+import { IDisposable } from 'base/common/lifecycle';
+import { IMessagePassingProtocol, IPCClient } from 'base/parts/ipc/common/ipc';
 
 /**
  * Declare minimal `MessageEvent` and `MessagePort` interfaces here
@@ -18,8 +18,8 @@ export interface MessageEvent {
 }
 
 export interface MessagePort {
-  addEventListener(type: "message", listener: (this: MessagePort, e: MessageEvent) => unknown): void;
-  removeEventListener(type: "message", listener: (this: MessagePort, e: MessageEvent) => unknown): void;
+  addEventListener(type: 'message', listener: (this: MessagePort, e: MessageEvent) => unknown): void;
+  removeEventListener(type: 'message', listener: (this: MessagePort, e: MessageEvent) => unknown): void;
 
   postMessage(message: Uint8Array): void;
 
@@ -39,7 +39,7 @@ export class Protocol implements IMessagePassingProtocol {
     // we must call start() to ensure messages are flowing
     port.start();
 
-    this.onMessage = Event.fromDOMEventEmitter<VSBuffer>(this.port, "message", (e: MessageEvent) => VSBuffer.wrap(e.data));
+    this.onMessage = Event.fromDOMEventEmitter<VSBuffer>(this.port, 'message', (e: MessageEvent) => VSBuffer.wrap(e.data));
   }
 
   send(message: VSBuffer): void {

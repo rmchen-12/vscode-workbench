@@ -4,7 +4,6 @@ import { generateUuid } from 'base/common/uuid';
 interface IMessageChannelResult {
   nonce: string;
   port: MessagePort;
-  // source: unknown;
 }
 
 export interface IpcMessagePort {
@@ -20,17 +19,8 @@ export interface IpcMessagePort {
   acquire(responseChannel: string, nonce: string): void;
 }
 
-export const globals: any = typeof self === 'object' ? self : typeof global === 'object' ? global : {};
-
-// export const ipcMessagePort: IpcMessagePort = globals.hi.ipcMessagePort;
-
 export async function acquirePort(type: 'sharedProcess' | 'mainProcess' | 'mainApp', nonce = generateUuid()): Promise<MessagePort> {
-  // Get ready to acquire the message port from the
-  // provided `responseChannel` via preload helper.
-  //   ipcMessagePort.acquire(responseChannel, nonce);
-
-  // If a `requestChannel` is provided, we are in charge
-  // to trigger acquisition of the message port from main
+  // we are in charge to trigger acquisition of the message port from main
   window.parent.postMessage({ nonce, type }, '*');
 
   // Wait until the main side has returned the `MessagePort`
