@@ -36,10 +36,7 @@ function _definePolyfillMarks(timeOrigin) {
  * @returns {{mark(name:string):void, getMarks():{name:string, startTime:number}[]}}
  */
 function _define() {
-  if (
-    typeof performance === 'object' &&
-    typeof performance.mark === 'function'
-  ) {
+  if (typeof performance === 'object' && typeof performance.mark === 'function') {
     // in a browser context, reuse performance-util
 
     if (typeof performance.timeOrigin !== 'number' && !performance.timing) {
@@ -57,14 +54,9 @@ function _define() {
           if (typeof timeOrigin !== 'number') {
             // safari: there is no timerOrigin but in renderers there is the timing-property
             // see https://bugs.webkit.org/show_bug.cgi?id=174862
-            timeOrigin =
-              performance.timing.navigationStart ||
-              performance.timing.redirectStart ||
-              performance.timing.fetchStart;
+            timeOrigin = performance.timing.navigationStart || performance.timing.redirectStart || performance.timing.fetchStart;
           }
-          const result = [
-            { name: 'code/timeOrigin', startTime: Math.round(timeOrigin) },
-          ];
+          const result = [{ name: 'code/timeOrigin', startTime: Math.round(timeOrigin) }];
           for (const entry of performance.getEntriesByType('mark')) {
             result.push({
               name: entry.name,
@@ -75,13 +67,6 @@ function _define() {
         },
       };
     }
-  } else if (typeof process === 'object') {
-    // node.js: use the normal polyfill but add the timeOrigin
-    // from the node perf_hooks API as very first mark
-    const timeOrigin = Math.round(
-      (require.nodeRequire || require)('perf_hooks').performance.timeOrigin,
-    );
-    return _definePolyfillMarks(timeOrigin);
   } else {
     // unknown environment
     console.trace('perf-util loaded in UNKNOWN environment');
@@ -112,6 +97,6 @@ if (typeof global === 'object') {
   sharedObj = {};
 }
 
-var performance = _factory(sharedObj);
-export var mark = performance.mark;
-export var getMarks = performance.getMarks;
+var Performance = _factory(sharedObj);
+export var mark = Performance.mark;
+export var getMarks = Performance.getMarks;

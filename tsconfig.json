@@ -1,31 +1,27 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
+    "composite": true,
+    "target": "es2021",
     "useDefineForClassFields": true,
-    "module": "ESNext",
+    "module": "ES2015",
     "types": ["trusted-types"],
-    "lib": [
-      "ES2015",
-      "ES2016.Array.Include",
-      "ES2017.String",
-      "ES2018.Promise",
-      "DOM",
-      "DOM.Iterable",
-      "WebWorker.ImportScripts"
-    ],
+    "lib": ["ES2015", "ES2016.Array.Include", "ES2017.String", "ES2018.Promise", "DOM", "DOM.Iterable", "WebWorker.ImportScripts"],
     "moduleResolution": "Node",
     "strict": true,
     "sourceMap": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "noEmit": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "noImplicitReturns": true,
     "experimentalDecorators": true,
     "paths": {
-      "src/*": ["./src/*"]
-    }
+      "src/*": ["./src/*"],
+      "base/*": ["./src/base/*"],
+      "platform/*": ["./src/platform/*"]
+    },
+    "outDir": "dist"
   },
   "include": ["./src"]
 }

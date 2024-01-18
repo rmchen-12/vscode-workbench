@@ -4,14 +4,36 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { SyncDescriptor } from './descriptors';
-import { ServiceIdentifier, BrandedService } from './instantiation';
+import { BrandedService, ServiceIdentifier } from './instantiation';
 
 const _registry: [ServiceIdentifier<any>, SyncDescriptor<any>][] = [];
 
-export function registerSingleton<T, Services extends BrandedService[]>(id: ServiceIdentifier<T>, ctor: new (...services: Services) => T, supportsDelayedInstantiation?: boolean): void {
-	_registry.push([id, new SyncDescriptor<T>(ctor as new (...args: any[]) => T, [], supportsDelayedInstantiation)]);
+export const enum InstantiationType {
+  /**
+   * 会立即初始化该 service
+   * @info 虽然初始化的很快，但是如果会有额外的开销来处理初始化操作，
+   * 因此要特别注意一些不必要的操作后置，避免初始化太慢
+   */
+  Eager = 0,
+
+  /**
+   *
+   * Instantiate this service as soon as a consumer uses it. This is the _better_
+   * way of registering a service.
+   */
+  Delayed = 1,
+}
+
+export function registerSingleton<T, Services extends BrandedService[]>(id: ServiceIdentifier<T>, ctor: new (...services: Services) => T, supportsDelayedInstantiation: InstantiationType): void;
+export function registerSingleton<T, Services extends BrandedService[]>(id: ServiceIdentifier<T>, descriptor: SyncDescriptor<any>): void;
+export function registerSingleton<T, Services extends BrandedService[]>(id: ServiceIdentifier<T>, ctorOrDescriptor: { new (...services: Services): T } | SyncDescriptor<any>, supportsDelayedInstantiation?: boolean | InstantiationType): void {
+  if (!(ctorOrDescriptor instanceof SyncDescriptor)) {
+    ctorOrDescriptor = new SyncDescriptor<T>(ctorOrDescriptor as new (...args: any[]) => T, [], Boolean(supportsDelayedInstantiation));
+  }
+
+  _registry.push([id, ctorOrDescriptor]);
 }
 
 export function getSingletonServiceDescriptors(): [ServiceIdentifier<any>, SyncDescriptor<any>][] {
-	return _registry;
+  return _registry;
 }
