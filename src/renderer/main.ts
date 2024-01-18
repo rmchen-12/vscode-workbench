@@ -5,7 +5,7 @@ import { IMainProcessService, IMainAppService, ISharedProcessService, registerMa
 import { SharedProcessService } from './services/sharedProcess/electron-sandbox/sharedProcessService';
 import { MainAppService } from './services/mainApp/electron-sandbox/mainAppService';
 import { MainProcessService } from './services/mainProcess/electron-sandbox/mainProcessService';
-import { IInstantiationService, ServicesAccessor } from 'src/platform/instantiation/instantiation';
+import { IInstantiationService } from 'src/platform/instantiation/instantiation';
 import { InstantiationService } from 'src/platform/instantiation/instantiationService';
 import { setGlobalLeakWarningThreshold } from 'src/base/common/event';
 import { getSingletonServiceDescriptors } from 'src/platform/instantiation/extensions';
@@ -13,12 +13,15 @@ import { IAuthenticationService } from 'src/platform/authentication/electron-san
 import { ILoggerService } from 'src/platform/logger/common/logger';
 import { services, servicesRegistry } from './services';
 import { ITickTimerService } from 'src/platform/tickTimer/common/tickTimer';
+import { registerAuthenticationService } from './services/authentication/authenticationService';
+import { registerLoggerService } from './services/logger/loggerService';
+import { registerTickTimerService } from './services/tickTimer/tickTimerService';
 
 interface IConfig {
   services: ('logger' | 'tickTimer' | 'authentication')[];
 }
 
-type RenderCallback = (accessor: ServicesAccessor) => Promise<void> | void;
+type RenderCallback = () => Promise<void> | void;
 
 export class Workbench extends Disposable {
   declare readonly _serviceBrand: undefined;
@@ -35,56 +38,34 @@ export class Workbench extends Disposable {
     const instantiationService = this.initServices(this.serviceCollection);
 
     instantiationService.invokeFunction(async (accessor) => {
-      // const lifecycleService = accessor.get(ILifecycleService);
-
       const authenticationService = accessor.get(IAuthenticationService);
       const loggerService = accessor.get(ILoggerService);
-      // const tickTimerService = accessor.get(ITickTimerService);
+      const tickTimerService = accessor.get(ITickTimerService);
 
       authenticationService.login(1).then((e) => console.log(e));
 
       services.logger.error('bosszp', 'jlkjlkj');
-      // console.time('获取主进程数据');
-      // authenticationService.getList().then((e) => {
-      //   // console.timeEnd('获取主进程数据');
-      //   // console.log('e', e);
-
-      //   console.log('start', Date.now());
-
-      //   tickTimerService.spm('sasdf1').then((e) => {
-      //     // console.log(e);
-      //     // console.timeEnd('asdf');
-      //   });
-      // });
 
       loggerService.error('bosszp', 'asdf');
 
-      // tickTimerService.spm('spm').then(console.log);
+      tickTimerService.spm('spm').then(console.log);
 
       // 执行 new vue()
-      await render(accessor);
+      await render();
     });
 
     return instantiationService;
   }
 
-  private registerListeners(): void {}
-
   private initServices(serviceCollection: ServiceCollection): IInstantiationService {
     // Layout Service
     // serviceCollection.set(IWorkbenchLayoutService, this);
 
-    if (this.config.services.includes('authentication')) {
-      registerMainProcessRemoteService(IAuthenticationService, 'authentication', { supportsDelayedInstantiation: true });
-    }
+    if (this.config.services.includes('authentication')) registerAuthenticationService();
 
-    if (this.config.services.includes('logger')) {
-      registerSharedProcessRemoteService(ILoggerService, 'logger', { supportsDelayedInstantiation: true });
-    }
+    if (this.config.services.includes('logger')) registerLoggerService();
 
-    if (this.config.services.includes('tickTimer')) {
-      registerMainAppRemoteService(ITickTimerService, 'tickTimer', { supportsDelayedInstantiation: true });
-    }
+    if (this.config.services.includes('tickTimer')) registerTickTimerService();
 
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     //
@@ -136,14 +117,8 @@ class Main extends Disposable {
     // Create Workbench
     const workbench = new Workbench(config, services.serviceCollection);
 
-    // Listeners
-    this.registerListeners(workbench);
-
     // Startup
-    const instantiationService = workbench.startup(render);
-
-    // Return API Facade
-    instantiationService.invokeFunction((accessor) => {});
+    workbench.startup(render);
   }
 
   private async initServices(): Promise<{ serviceCollection: ServiceCollection }> {
@@ -168,8 +143,6 @@ class Main extends Disposable {
 
     return { serviceCollection };
   }
-
-  private registerListeners(workbench: Workbench): void {}
 }
 
 console.time('render');
@@ -178,9 +151,9 @@ const connect = new Main();
 
 connect.open(
   {
-    services: ['logger', 'authentication'],
+    services: ['logger', 'authentication', 'tickTimer'],
   },
-  (accesser) => {
+  () => {
     console.timeEnd('render');
     document.body.innerHTML = '123123';
   }

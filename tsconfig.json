@@ -1,9 +1,9 @@
 {
   "compilerOptions": {
     "composite": true,
-    "target": "es2021",
+    "target": "ESNext",
     "useDefineForClassFields": true,
-    "module": "ES2015",
+    "module": "ESNext",
     "types": ["trusted-types"],
     "lib": ["ES2015", "ES2016.Array.Include", "ES2017.String", "ES2018.Promise", "DOM", "DOM.Iterable", "WebWorker.ImportScripts"],
     "moduleResolution": "Node",
