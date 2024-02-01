@@ -1,9 +1,8 @@
-import { Barrier, timeout } from 'base/common/async';
+import { Barrier } from 'base/common/async';
 import { Client as MessagePortClient } from 'base/parts/ipc/common/ipc.mp';
 import { Disposable } from 'base/common/lifecycle';
 import { IChannel, IServerChannel, getDelayedChannel } from 'base/parts/ipc/common/ipc';
 import { acquirePort } from 'base/parts/ipc/electron-sandbox/ipc.mp';
-// import { ILogService } from "platform/log/common/log";
 import { mark } from 'base/common/performance';
 
 export interface IMainAppService {
@@ -22,11 +21,7 @@ export class MainAppService extends Disposable implements IMainAppService {
 
   private readonly restoredBarrier = new Barrier();
 
-  // prettier-ignore
-  constructor(
-    readonly windowId: number,
-    // @ILogService private readonly logService: ILogService
-  ) {
+  constructor(readonly windowId: number) {
     super();
 
     this.withMainAppConnection = this.connect();

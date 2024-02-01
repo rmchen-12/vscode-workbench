@@ -1,9 +1,8 @@
-import { Barrier, timeout } from 'base/common/async';
+import { Barrier } from 'base/common/async';
 import { Client as MessagePortClient } from 'base/parts/ipc/common/ipc.mp';
 import { Disposable } from 'base/common/lifecycle';
 import { IChannel, IServerChannel, getDelayedChannel } from 'base/parts/ipc/common/ipc';
 import { acquirePort } from 'base/parts/ipc/electron-sandbox/ipc.mp';
-// import { ILogService } from "platform/log/common/log";
 import { mark } from 'base/common/performance';
 
 export interface IMainProcessService {
@@ -22,25 +21,19 @@ export class MainProcessService extends Disposable implements IMainProcessServic
 
   private readonly restoredBarrier = new Barrier();
 
-  // prettier-ignore
-  constructor(
-    readonly windowId: number,
-    // @ILogService private readonly logService: ILogService
-  ) {
+  constructor(readonly windowId: number) {
     super();
 
     this.withMainProcessConnection = this.connect();
   }
 
   private async connect(): Promise<MessagePortClient> {
-      // Acquire a message port connected to the shared process
+    // Acquire a message port connected to the shared process
     mark('hi/willConnectSharedProcess');
-    console.time('mainProcess')
-    // this.logService.trace("Renderer->SharedProcess#connect: before acquirePort");
+    console.time('mainProcess');
     const port = await acquirePort('mainProcess');
-    console.timeEnd('mainProcess')
+    console.timeEnd('mainProcess');
     mark('hi/didConnectSharedProcess');
-    // this.logService.trace("Renderer->SharedProcess#connect: connection established");
 
     return this._register(new MessagePortClient(port, `window:${this.windowId}`));
   }
