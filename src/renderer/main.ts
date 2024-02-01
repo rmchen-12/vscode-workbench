@@ -47,41 +47,30 @@ export class Workbench extends Disposable {
       services.logger.error('bosszp', 'jlkjlkj');
       services.tickTimer.spm('spm').then(console.log);
 
-      services.authentication.getList()
+      services.authentication.getList();
 
       // 执行 new vue()
       await render();
     });
   }
 
+  // 根据 apiMap 循环注册
   private initServices(serviceCollection: ServiceCollection): IInstantiationService {
     for (const [key, value] of (Object as any).entries(map)) {
-      if (key === 'main') {
-        const mainProcessServices = value;
+      const services = value;
 
-        for (const [serviceName, serviceMethods] of (Object as any).entries(mainProcessServices)) {
-          const id = createDecorator(serviceName);
-          this.serviceMap.set(serviceName, id);
+      for (const [serviceName] of (Object as any).entries(services)) {
+        const id = createDecorator(serviceName);
+        this.serviceMap.set(serviceName, id);
+
+        if (key === 'main') {
           registerMainProcessRemoteService(id, serviceName);
         }
-      }
-
-      if (key === 'mainApp') {
-        const mainAppServices = value;
-
-        for (const [serviceName, serviceMethods] of (Object as any).entries(mainAppServices)) {
-          const id = createDecorator(serviceName);
-          this.serviceMap.set(serviceName, id);
+        if (key === 'mainApp') {
           registerMainAppRemoteService(id, serviceName);
         }
-      }
 
-      if (key === 'sharedProcess') {
-        const sharedProcessServices = value;
-
-        for (const [serviceName, serviceMethods] of (Object as any).entries(sharedProcessServices)) {
-          const id = createDecorator(serviceName);
-          this.serviceMap.set(serviceName, id);
+        if (key === 'sharedProcess') {
           registerSharedProcessRemoteService(id, serviceName);
         }
       }
