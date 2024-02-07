@@ -5,6 +5,7 @@
   "license": "ISC",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
+    "start": "pnpm -r --F=@hi/bridge-core run start",
     "release": "changeset publish",
     "publish:pre": "changeset pre enter alpha",
     "publish:pre:exit": "changeset pre exit"
