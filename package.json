@@ -1,26 +1,18 @@
 {
-  "name": "my-app",
-  "version": "0.0.0",
+  "name": "@hi/bridge",
+  "description": "boss hi 与 iframe 建立通讯实现",
+  "private": true,
+  "license": "ISC",
   "scripts": {
-    "start": "webpack-dev-server --mode development --env.NODE_ENV=development --open --port 3000",
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "serve": "vite preview"
+    "preinstall": "npx only-allow pnpm",
+    "release": "changeset publish",
+    "publish:pre": "changeset pre enter alpha",
+    "publish:pre:exit": "changeset pre exit"
   },
-  "dependencies": {},
   "devDependencies": {
-    "@types/trusted-types": "2.0.2",
-    "electron": "22.3.24",
+    "@changesets/cli": "^2.27.1",
+    "@types/node": "^20.11.16",
     "typescript": "~4.5.2",
-    "vite": "^2.6.4",
-    "clean-webpack-plugin": "^2.0.0",
-    "css-loader": "^1.0.1",
-    "html-webpack-plugin": "^3.2.0",
-    "style-loader": "1.3.0",
-    "ts-loader": "6.2.2",
-    "ts-node": "10.6.0",
-    "webpack": "^4.42.1",
-    "webpack-cli": "^3.3.5",
-    "webpack-dev-server": "^3.7.2"
+    "vite": "^2.6.4"
   }
 }

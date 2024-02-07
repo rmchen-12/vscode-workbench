@@ -1,0 +1,11 @@
+{
+  "mode": "pre",
+  "tag": "alpha",
+  "initialVersions": {
+    "@hi/bridge": "0.0.1",
+    "@hi/bridge-core": "0.0.1"
+  },
+  "changesets": [
+    "eight-geckos-hear"
+  ]
+}

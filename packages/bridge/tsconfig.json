@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ESNext",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2020", "ES2016.Array.Include", "ES2017.String", "ES2018.Promise", "DOM", "DOM.Iterable", "WebWorker.ImportScripts"],
+    "moduleResolution": "Node",
+    "declaration": true,
+    "declarationDir": "dist",
+    "emitDeclarationOnly": true,
+    "strict": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": true,
+    "experimentalDecorators": true,
+    "outDir": "dist"
+  },
+  "include": ["."]
+}

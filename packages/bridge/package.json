@@ -1,0 +1,23 @@
+{
+  "name": "@hi/bridge",
+  "version": "0.0.2-alpha.0",
+  "private": false,
+  "types": "dist/index.d.ts",
+  "main": "dist/index.umd.js",
+  "module": "dist/index.es.js",
+  "sideEffects": false,
+  "files": [
+    "dist/*"
+  ],
+  "license": "ISC",
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "build": "vite build && tsc -d"
+  },
+  "dependencies": {
+    "@hi/bridge-core": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^2.6.4"
+  }
+}
